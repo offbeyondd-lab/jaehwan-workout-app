@@ -314,6 +314,30 @@ function App() {
 
   const updateRep = (index: number, setIndex: number, value: string) => setReps((current) => { const next = [...(current[currentKey(index)] ?? emptyReps())]; next[setIndex] = value; return { ...current, [currentKey(index)]: next } })
 
+  const deleteDayExercise = (index: number) => {
+    const key = currentKey(index)
+    setNames((prev) => ({ ...prev, [key]: '' }))
+    setOverrides((prev) => ({ ...prev, [key]: { sets: '', weight: '', unit: 'kg' } }))
+    setReps((prev) => ({ ...prev, [key]: emptyReps() }))
+    setMemos((prev) => ({ ...prev, [key]: '' }))
+    setCompleted((prev) => ({ ...prev, [key]: false }))
+  }
+
+  const clearUnusedExercises = () => {
+    const emptyIndices = day.exercises
+      .map((_, index) => index)
+      .filter((index) => displayName(day.exercises[index], index).trim() === '')
+
+    if (emptyIndices.length === 0) {
+      alert('삭제할 빈 운동 슬롯이 없습니다.')
+      return
+    }
+
+    emptyIndices.forEach((index) => {
+      deleteDayExercise(index)
+    })
+  }
+
   const copyFirstRepToAllSets = (index: number) => {
     setReps((current) => {
       const currentArr = current[currentKey(index)] ?? emptyReps()
@@ -1113,6 +1137,14 @@ function App() {
                               History
                             </button>
                           ) : null}
+                          <button
+                            type="button"
+                            className="slot-delete-btn"
+                            title="이 운동 삭제"
+                            onClick={() => deleteDayExercise(index)}
+                          >
+                            ✕
+                          </button>
                         </div>
                         <span>{exercise.muscle}{exercise.note ? ` · ${exercise.note}` : ''}</span>
                       </div>
@@ -1195,6 +1227,11 @@ function App() {
               <button className="finish-button" onClick={finishWorkout}>
                 {isAllCompleted ? '운동 완료 해제' : '운동 완료 처리'} <span>→</span>
               </button>
+              {configuredCount < day.exercises.length && (
+                <button className="clear-unused-btn" onClick={clearUnusedExercises}>
+                  🗑️ 미사용 운동 제거 <span>({day.exercises.length - configuredCount}개)</span>
+                </button>
+              )}
               <button className="save-insta-btn" onClick={saveInstagramImage}>
                 📸 이미지 저장하기 <span>↓</span>
               </button>

@@ -176,6 +176,11 @@ button { font: inherit; cursor: pointer; }
 .volume-cell strong { color: var(--coral); font-size: 14px; white-space: nowrap; }
 .history-button { border: 1px solid var(--line); background: transparent; color: var(--muted); padding: 5px 7px; font-size: 10px; letter-spacing: .04em; }
 .history-button:hover { border-color: var(--coral); color: var(--coral); }
+.slot-delete-btn { border: 1px solid var(--line); background: white; color: var(--muted); padding: 3px 6px; font-size: 10px; border-radius: 2px; cursor: pointer; transition: all .15s ease; }
+.slot-delete-btn:hover { border-color: #e85f48; color: #e85f48; background: rgba(232, 95, 72, .08); }
+.clear-unused-btn { width: 100%; border: 1px solid var(--line); background: white; color: var(--muted); padding: 13px 20px; text-align: left; font-weight: 700; font-size: 13px; border-radius: 6px; cursor: pointer; transition: all .15s ease; }
+.clear-unused-btn:hover { border-color: #e85f48; color: #e85f48; background: rgba(232, 95, 72, .05); }
+.clear-unused-btn span { float: right; font-size: 11px; opacity: .8; }
 .memo-field small { display: block; margin-bottom: 5px; }
 .memo-field input { width: 100%; min-width: 0; border: 1px solid var(--line); padding: 8px 7px; color: var(--ink); outline: none; }
 .memo-field input:focus { border-color: var(--coral); }
