@@ -234,6 +234,7 @@ function App() {
   const summaryTotals = muscleGroups.map((_, index) => totalSummary.reduce((sum, week) => sum + week[index], 0))
   const selectedHistory = history.filter((entry) => entry.name === historyExercise)
   const completedCount = day.exercises.filter((_, index) => completed[currentKey(index)]).length
+  const isAllCompleted = day.exercises.length > 0 && day.exercises.every((_, index) => !!completed[currentKey(index)])
 
   // Save Effects
   useEffect(() => localStorage.setItem('workout-reps', JSON.stringify(reps)), [reps])
@@ -298,27 +299,43 @@ function App() {
   }
 
   const finishWorkout = () => {
-    const date = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' })
-    const entries = day.exercises
-      .map((exercise, index) => {
-        const settings = settingsFor(exercise, selectedWeek, selectedDay, index)
-        const name = displayName(exercise, index)
-        return {
-          id: `${Date.now()}-${index}`,
-          name,
-          date,
-          week: selectedWeek,
-          day: day.title,
-          sets: settings.sets,
-          weight: settings.weight,
-          unit: settings.unit as 'kg' | 'lb',
-          reps: recordsFor(selectedWeek, selectedDay, index)
-        }
+    if (isAllCompleted) {
+      setCompleted((current) => {
+        const next = { ...current }
+        day.exercises.forEach((_, index) => {
+          next[currentKey(index)] = false
+        })
+        return next
       })
-      .filter((entry) => entry.name.trim() !== '' || entry.reps.some((r) => r !== ''))
+    } else {
+      const date = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' })
+      const entries = day.exercises
+        .map((exercise, index) => {
+          const settings = settingsFor(exercise, selectedWeek, selectedDay, index)
+          const name = displayName(exercise, index)
+          return {
+            id: `${Date.now()}-${index}`,
+            name,
+            date,
+            week: selectedWeek,
+            day: day.title,
+            sets: settings.sets,
+            weight: settings.weight,
+            unit: settings.unit as 'kg' | 'lb',
+            reps: recordsFor(selectedWeek, selectedDay, index)
+          }
+        })
+        .filter((entry) => entry.name.trim() !== '' || entry.reps.some((r) => r !== ''))
 
-    setHistory((current) => [...entries, ...current])
-    day.exercises.forEach((_, index) => { if (!completed[currentKey(index)]) toggleComplete(index) })
+      setHistory((current) => [...entries, ...current])
+      setCompleted((current) => {
+        const next = { ...current }
+        day.exercises.forEach((_, index) => {
+          next[currentKey(index)] = true
+        })
+        return next
+      })
+    }
   }
 
   // --- Day Main Muscle Chip Toggle Handler ---
@@ -866,11 +883,12 @@ function App() {
                 {day.exercises.map((exercise, index) => {
                   const key = currentKey(index)
                   const name = displayName(exercise, index)
+                  const hasName = name.trim() !== ''
                   const settings = settingsFor(exercise, selectedWeek, selectedDay, index)
                   const record = recordsFor(selectedWeek, selectedDay, index)
                   const volume = volumeFor(exercise, selectedWeek, selectedDay, index)
                   return (
-                    <article className={`exercise-row ${completed[key] ? 'is-complete' : ''}`} key={key}>
+                    <article className={`exercise-row ${hasName ? 'has-exercise' : 'is-empty-slot'} ${completed[key] ? 'is-complete' : ''}`} key={key}>
                       <button className="check-button" onClick={() => toggleComplete(index)}>
                         {completed[key] ? '✓' : String(index + 1).padStart(2, '0')}
                       </button>
@@ -958,7 +976,7 @@ function App() {
 
             <aside className="summary-panel">
               <button className="finish-button" onClick={finishWorkout}>
-                운동 완료 처리 <span>→</span>
+                {isAllCompleted ? '운동 완료 해제' : '운동 완료 처리'} <span>→</span>
               </button>
             </aside>
           </section>

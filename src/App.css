@@ -141,6 +141,18 @@ button { font: inherit; cursor: pointer; }
 .check-button { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line); color: var(--muted); background: white; font-size: 11px; }
 .is-complete .check-button { color: white; border-color: var(--lime); background: var(--lime); }
 .is-complete .exercise-name-input { text-decoration: line-through; color: var(--muted); }
+
+/* Configured vs Unconfigured font weight styles */
+.is-empty-slot .check-button { color: #aaa; font-weight: 400; }
+.is-empty-slot .exercise-name-input { font-weight: 400; color: #888; }
+.is-empty-slot .editable-field input { font-weight: 400; color: #888; }
+.is-empty-slot .exercise-info span { font-weight: 400; color: #aaa; }
+
+.has-exercise .check-button { color: var(--ink); font-weight: 800; }
+.has-exercise .exercise-name-input { font-weight: 900; color: #000; font-size: 15px; }
+.has-exercise .editable-field input { font-weight: 900; color: #000; font-size: 15px; }
+.has-exercise .exercise-info span { font-weight: 800; color: #222; }
+
 .exercise-info span { display: block; color: var(--muted); font-size: 12px; margin-top: 6px; }
 .exercise-title-line { display: flex; align-items: center; gap: 7px; }
 .exercise-name-input { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 2px; padding: 9px 8px; background: white; color: var(--ink); font: 700 14px inherit; outline: none; }
@@ -163,7 +175,7 @@ button { font: inherit; cursor: pointer; }
 .memo-field small { display: block; margin-bottom: 5px; }
 .memo-field input { width: 100%; min-width: 0; border: 1px solid var(--line); padding: 8px 7px; color: var(--ink); outline: none; }
 .memo-field input:focus { border-color: var(--coral); }
-.summary-panel { background: var(--ink); color: white; padding: 20px 27px; align-self: start; }
+.summary-panel { background: transparent; padding: 0; align-self: start; }
 .summary-panel > :not(.finish-button) { display: none; }
 .summary-panel .eyebrow { color: #9c9b95; }
 .summary-panel h2 { font-size: 43px; line-height: .94; letter-spacing: -.06em; margin: 30px 0 45px; }
@@ -176,7 +188,8 @@ button { font: inherit; cursor: pointer; }
 .summary-progress strong { color: var(--lime); }
 .progress-track { background: #3e3e39; height: 4px; margin-top: 14px; }
 .progress-track i { display: block; height: 100%; background: var(--lime); transition: width .25s ease; }
-.finish-button { margin-top: 32px; width: 100%; border: 0; background: var(--coral); color: white; padding: 15px; text-align: left; font-weight: 800; }
+.finish-button { margin-top: 0; width: 100%; border: 0; background: var(--coral); color: white; padding: 16px 20px; text-align: left; font-weight: 800; border-radius: 6px; cursor: pointer; transition: background .15s ease; }
+.finish-button:hover { background: #d34c37; }
 .finish-button span { float: right; font-size: 18px; line-height: 14px; }
 .history-backdrop { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 20px; background: rgba(20, 21, 19, .72); }
 .history-modal { position: relative; width: min(680px, 100%); max-height: min(820px, 92vh); overflow: auto; background: #20211e; color: white; box-shadow: 0 20px 70px rgba(0, 0, 0, .3); }
