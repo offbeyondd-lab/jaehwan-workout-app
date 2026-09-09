@@ -189,6 +189,7 @@ function App() {
   const [dayFocuses, setDayFocuses] = useState<Record<number, string>>(() => readStorage('workout-day-focuses', initialDayFocuses))
   const [daySearchFilter, setDaySearchFilter] = useState('')
   const [showDayPicker, setShowDayPicker] = useState(true)
+  const [applyToAllWeeks, setApplyToAllWeeks] = useState(false)
 
   // Template Management State
   const [templates, setTemplates] = useState<MuscleTemplate[]>(() => readStorage('workout-main-templates', defaultTemplates))
@@ -361,90 +362,22 @@ function App() {
     setDayFocuses((prev) => ({ ...prev, [selectedDay]: nextFocus }))
   }
 
-  // --- Apply Selected Muscles to Exercises & Close Picker ---
+  // --- Apply Selected Muscles to Exercises & Open Detail Template Modal ---
   const handleApplyDayPicker = () => {
     const currentList = dayMuscles[selectedDay] || []
-    const combinedExercises: { name: string; sets: number }[] = []
-    currentList.forEach((mName) => {
-      const tpl = templates.find((t) => t.name === mName)
-      if (tpl) {
-        tpl.exercises.forEach((ex) => {
-          if (ex.name.trim() !== '') {
-            combinedExercises.push({ name: ex.name, sets: ex.sets })
-          }
-        })
-      }
-    })
-
-    if (currentList.length > 0) {
-      const newNames: Record<string, string> = { ...names }
-      const newOverrides: ExerciseOverrides = { ...overrides }
-
-      for (let i = 0; i < 10; i++) {
-        const key = currentKey(i)
-        if (i < combinedExercises.length) {
-          const item = combinedExercises[i]
-          newNames[key] = item.name
-          newOverrides[key] = {
-            sets: item.sets.toString(),
-            weight: overrides[key]?.weight ?? '',
-            unit: overrides[key]?.unit ?? 'kg'
-          }
-        } else {
-          newNames[key] = ''
-          newOverrides[key] = { sets: '', weight: '', unit: 'kg' }
-        }
-      }
-
-      setNames(newNames)
-      setOverrides(newOverrides)
+    if (currentList.length === 0) {
+      alert('반영할 부위를 하나 이상 선택해주세요.')
+      return
     }
 
-    setShowDayPicker(false)
-  }
+    // Match template IDs from selected muscle names
+    const matchingTemplateIds = templates
+      .filter((t) => currentList.includes(t.name))
+      .map((t) => t.id)
 
-  // --- Apply Selected Muscles across ALL WEEKS for current Day ---
-  const handleApplyDayPickerToAllWeeks = () => {
-    const currentList = dayMuscles[selectedDay] || []
-    const combinedExercises: { name: string; sets: number }[] = []
-    currentList.forEach((mName) => {
-      const tpl = templates.find((t) => t.name === mName)
-      if (tpl) {
-        tpl.exercises.forEach((ex) => {
-          if (ex.name.trim() !== '') {
-            combinedExercises.push({ name: ex.name, sets: ex.sets })
-          }
-        })
-      }
-    })
-
-    if (currentList.length > 0) {
-      const newNames: Record<string, string> = { ...names }
-      const newOverrides: ExerciseOverrides = { ...overrides }
-
-      weeks.forEach((week) => {
-        for (let i = 0; i < 10; i++) {
-          const key = keyFor(week, selectedDay, i)
-          if (i < combinedExercises.length) {
-            const item = combinedExercises[i]
-            newNames[key] = item.name
-            newOverrides[key] = {
-              sets: item.sets.toString(),
-              weight: overrides[key]?.weight ?? '',
-              unit: overrides[key]?.unit ?? 'kg'
-            }
-          } else {
-            newNames[key] = ''
-            newOverrides[key] = { sets: '', weight: '', unit: 'kg' }
-          }
-        }
-      })
-
-      setNames(newNames)
-      setOverrides(newOverrides)
-    }
-
-    setShowDayPicker(false)
+    setSelectedApplyTemplateIds(matchingTemplateIds)
+    setExcludedApplyExerciseKeys({})
+    setShowApplyModal(true)
   }
 
   // --- Select Day Handler ---
@@ -592,21 +525,25 @@ function App() {
     const newNames: Record<string, string> = { ...names }
     const newOverrides: ExerciseOverrides = { ...overrides }
 
-    for (let i = 0; i < 10; i++) {
-      const key = currentKey(i)
-      if (i < exercisesToApply.length) {
-        const item = exercisesToApply[i]
-        newNames[key] = item.name
-        newOverrides[key] = {
-          sets: item.sets.toString(),
-          weight: overrides[key]?.weight ?? '',
-          unit: overrides[key]?.unit ?? 'kg'
+    const targetWeeks = applyToAllWeeks ? weeks : [selectedWeek]
+
+    targetWeeks.forEach((week) => {
+      for (let i = 0; i < 10; i++) {
+        const key = keyFor(week, selectedDay, i)
+        if (i < exercisesToApply.length) {
+          const item = exercisesToApply[i]
+          newNames[key] = item.name
+          newOverrides[key] = {
+            sets: item.sets.toString(),
+            weight: overrides[key]?.weight ?? '',
+            unit: overrides[key]?.unit ?? 'kg'
+          }
+        } else {
+          newNames[key] = ''
+          newOverrides[key] = { sets: '', weight: '', unit: 'kg' }
         }
-      } else {
-        newNames[key] = ''
-        newOverrides[key] = { sets: '', weight: '', unit: 'kg' }
       }
-    }
+    })
 
     if (selectedMuscleNames.length > 0) {
       setDayMuscles((prev) => ({ ...prev, [selectedDay]: selectedMuscleNames }))
@@ -616,6 +553,7 @@ function App() {
     setNames(newNames)
     setOverrides(newOverrides)
     setShowApplyModal(false)
+    setShowDayPicker(false)
   }
 
   // Filter templates for search/chip bar in Template Setting
@@ -906,9 +844,14 @@ function App() {
                     </button>
                   )
                 })}
-                <button className="apply-all-weeks-btn" onClick={handleApplyDayPickerToAllWeeks}>
-                  모든 WEEK에 적용
-                </button>
+                <label className="apply-all-weeks-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={applyToAllWeeks}
+                    onChange={(e) => setApplyToAllWeeks(e.target.checked)}
+                  />
+                  <span>모든 WEEK에 적용</span>
+                </label>
               </div>
             </section>
           ) : null}
