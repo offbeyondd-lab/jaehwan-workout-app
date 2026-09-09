@@ -233,7 +233,65 @@ function App() {
 
   const totalSummary = weeks.map((week) => muscleGroups.map((muscle) => workoutDays.reduce((sum, workoutDay, dayIndex) => sum + workoutDay.exercises.reduce((daySum, exercise, exerciseIndex) => daySum + (exercise.muscle === muscle ? volumeFor(exercise, week, dayIndex, exerciseIndex) : 0), 0), 0)))
   const summaryTotals = muscleGroups.map((_, index) => totalSummary.reduce((sum, week) => sum + week[index], 0))
-  const selectedHistory = history.filter((entry) => entry.name === historyExercise).slice(0, 3)
+
+  const getHistoryForExercise = (exerciseName: string | null) => {
+    if (!exerciseName || !exerciseName.trim()) return []
+    const targetName = exerciseName.trim().toLowerCase()
+    const map = new Map<string, HistoryEntry>()
+    const currentWeekNum = parseInt(selectedWeek.replace(/\D/g, ''), 10) || 0
+
+    weeks.forEach((w) => {
+      workoutDays.forEach((wDay, dayIdx) => {
+        wDay.exercises.forEach((ex, exIdx) => {
+          const k = keyFor(w, dayIdx, exIdx)
+          const name = (names[k] ?? ex.name ?? '').trim()
+          if (name.toLowerCase() === targetName) {
+            const repsArr = recordsFor(w, dayIdx, exIdx)
+            const settings = settingsFor(ex, w, dayIdx, exIdx)
+            const hasReps = repsArr.some((r) => r.trim() !== '')
+            const hasWeight = settings.weight.trim() !== ''
+            const isDone = !!completed[k]
+
+            if (hasReps || hasWeight || isDone) {
+              const entryKey = `${w}-${wDay.title}`
+              map.set(entryKey, {
+                id: k,
+                name: exerciseName,
+                date: `2026년 9월 9일`,
+                week: w,
+                day: wDay.title,
+                sets: settings.sets,
+                weight: settings.weight,
+                unit: settings.unit as 'kg' | 'lb',
+                reps: repsArr
+              })
+            }
+          }
+        })
+      })
+    })
+
+    history.forEach((entry) => {
+      if (entry.name && entry.name.trim().toLowerCase() === targetName) {
+        const entryKey = `${entry.week}-${entry.day}`
+        const existing = map.get(entryKey)
+        if (!existing || entry.reps.some((r) => r.trim() !== '')) {
+          map.set(entryKey, entry)
+        }
+      }
+    })
+
+    const list = Array.from(map.values())
+    const getWeekNum = (w: string) => parseInt(w.replace(/\D/g, ''), 10) || 0
+
+    const priorEntries = list.filter((e) => getWeekNum(e.week) <= currentWeekNum)
+    const candidateList = priorEntries.length > 0 ? priorEntries : list
+
+    candidateList.sort((a, b) => getWeekNum(b.week) - getWeekNum(a.week))
+    return candidateList.slice(0, 3)
+  }
+
+  const selectedHistory = getHistoryForExercise(historyExercise)
   const configuredIndices = day.exercises
     .map((exercise, index) => ({ exercise, index }))
     .filter(({ exercise, index }) => displayName(exercise, index).trim() !== '')
