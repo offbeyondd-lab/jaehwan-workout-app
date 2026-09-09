@@ -27,12 +27,14 @@ const baseWorkoutDays: WorkoutDay[] = [
   { title: 'Day 3', focus: '어깨 + 복근', exercises: [{ name: 'OHP (전면 고립형) (스미스)', muscle: '어깨', sets: 4 }, { name: '덤벨프레스 (전측면)', muscle: '어깨', sets: 4 }, { name: '사레레 (측면)', muscle: '어깨', sets: 4 }, { name: '사레레 (후면)', muscle: '어깨', sets: 4 }, { name: '케이블 플라이 (후면)', muscle: '어깨', sets: 4 }, { name: '업라이트로우 (측면)', muscle: '어깨', sets: 4 }, { name: '복근 루틴', muscle: '복근', sets: 3 }] },
   { title: 'Day 4', focus: '팔 + 복근', exercises: [{ name: '바벨컬', muscle: '이두', sets: 4 }, { name: '익스텐션', muscle: '삼두', sets: 4 }, { name: '케이블컬', muscle: '이두', sets: 4 }, { name: '케이블 푸쉬 다운', muscle: '삼두', sets: 4 }, { name: '해머컬', muscle: '이두', sets: 4 }, { name: '케이블 원암 익스텐션', muscle: '삼두', sets: 4 }, { name: '복근 루틴', muscle: '복근', sets: 3 }] },
   { title: 'Day 5', focus: '등 + 어깨 후면', exercises: [{ name: '렛풀다운', muscle: '등', sets: 4 }, { name: '롱풀', muscle: '등', sets: 4 }, { name: '케이블풀다운', muscle: '등', sets: 4 }, { name: '어시스트풀업 or 바벨로우', muscle: '등', sets: 4 }, { name: '루마니안데드리프트', muscle: '등', sets: 4 }, { name: '케이블 플라이 (후면)', muscle: '어깨', sets: 4 }, { name: '데드리프트', muscle: '등', sets: 4, weight: 140, note: '퇴근 후' }, { name: 'OHP', muscle: '어깨', sets: 4, weight: 60, note: '퇴근 후' }] },
+  { title: 'Day 6', focus: '자율 운동', exercises: [] },
+  { title: 'Day 7', focus: '자율 운동', exercises: [] },
 ]
 
 const workoutDays: WorkoutDay[] = baseWorkoutDays.map((workoutDay) => {
   const exercises = [...workoutDay.exercises]
   while (exercises.length < 10) {
-    exercises.push({ name: '', muscle: workoutDay.focus.split(' ')[0], sets: 0, weight: undefined })
+    exercises.push({ name: '', muscle: workoutDay.focus.split(' ')[0] || '자율', sets: 0, weight: undefined })
   }
   return { ...workoutDay, exercises }
 })
@@ -147,7 +149,9 @@ const initialDayMuscles: Record<number, string[]> = {
   1: ['가슴', '삼두'],
   2: ['어깨', '복근'],
   3: ['이두', '삼두', '복근'],
-  4: ['등', '어깨']
+  4: ['등', '어깨'],
+  5: [],
+  6: []
 }
 
 const initialDayFocuses: Record<number, string> = {
@@ -155,7 +159,9 @@ const initialDayFocuses: Record<number, string> = {
   1: '가슴 + 삼두 (밀기 운동)',
   2: '어깨 + 복근',
   3: '팔 + 복근',
-  4: '등 + 어깨 후면'
+  4: '등 + 어깨 후면',
+  5: '자율 운동',
+  6: '자율 운동'
 }
 
 const weeks = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8']
@@ -182,6 +188,7 @@ function App() {
   const [dayMuscles, setDayMuscles] = useState<Record<number, string[]>>(() => readStorage('workout-day-muscles', initialDayMuscles))
   const [dayFocuses, setDayFocuses] = useState<Record<number, string>>(() => readStorage('workout-day-focuses', initialDayFocuses))
   const [daySearchFilter, setDaySearchFilter] = useState('')
+  const [showDayPicker, setShowDayPicker] = useState(true)
 
   // Template Management State
   const [templates, setTemplates] = useState<MuscleTemplate[]>(() => readStorage('workout-main-templates', defaultTemplates))
@@ -327,10 +334,13 @@ function App() {
 
     setDayMuscles((prev) => ({ ...prev, [selectedDay]: nextList }))
     setDayFocuses((prev) => ({ ...prev, [selectedDay]: nextFocus }))
+  }
 
-    // Combine templates into Day's 10 slots
+  // --- Apply Selected Muscles to Exercises & Close Picker ---
+  const handleApplyDayPicker = () => {
+    const currentList = dayMuscles[selectedDay] || []
     const combinedExercises: { name: string; sets: number }[] = []
-    nextList.forEach((mName) => {
+    currentList.forEach((mName) => {
       const tpl = templates.find((t) => t.name === mName)
       if (tpl) {
         tpl.exercises.forEach((ex) => {
@@ -341,27 +351,37 @@ function App() {
       }
     })
 
-    const newNames: Record<string, string> = { ...names }
-    const newOverrides: ExerciseOverrides = { ...overrides }
+    if (currentList.length > 0) {
+      const newNames: Record<string, string> = { ...names }
+      const newOverrides: ExerciseOverrides = { ...overrides }
 
-    for (let i = 0; i < 10; i++) {
-      const key = currentKey(i)
-      if (i < combinedExercises.length) {
-        const item = combinedExercises[i]
-        newNames[key] = item.name
-        newOverrides[key] = {
-          sets: item.sets.toString(),
-          weight: overrides[key]?.weight ?? '',
-          unit: overrides[key]?.unit ?? 'kg'
+      for (let i = 0; i < 10; i++) {
+        const key = currentKey(i)
+        if (i < combinedExercises.length) {
+          const item = combinedExercises[i]
+          newNames[key] = item.name
+          newOverrides[key] = {
+            sets: item.sets.toString(),
+            weight: overrides[key]?.weight ?? '',
+            unit: overrides[key]?.unit ?? 'kg'
+          }
+        } else {
+          newNames[key] = ''
+          newOverrides[key] = { sets: '', weight: '', unit: 'kg' }
         }
-      } else {
-        newNames[key] = ''
-        newOverrides[key] = { sets: '', weight: '', unit: 'kg' }
       }
+
+      setNames(newNames)
+      setOverrides(newOverrides)
     }
 
-    setNames(newNames)
-    setOverrides(newOverrides)
+    setShowDayPicker(false)
+  }
+
+  // --- Select Day Handler ---
+  const handleSelectDay = (dayIndex: number) => {
+    setSelectedDay(dayIndex)
+    setShowDayPicker(true)
   }
 
   // --- Template Management Functions ---
@@ -773,7 +793,7 @@ function App() {
               <button
                 className={selectedDay === index ? 'active' : ''}
                 key={workout.title}
-                onClick={() => setSelectedDay(index)}
+                onClick={() => handleSelectDay(index)}
               >
                 <span>{workout.title}</span>
                 <strong>{dayFocuses[index] || workout.focus}</strong>
@@ -781,32 +801,39 @@ function App() {
             ))}
           </nav>
 
-          {/* Main Muscle Group Picker Section (Matching Attachment Image) */}
-          <section className="day-main-picker-card">
-            <div className="template-search-bar">
-              <span className="search-icon">🔍</span>
-              <input
-                type="text"
-                placeholder="Main 운동 추가 하세요."
-                value={daySearchFilter}
-                onChange={(e) => setDaySearchFilter(e.target.value)}
-              />
-            </div>
-            <div className="muscle-chips-row">
-              {dayFilteredTemplates.map((tpl) => {
-                const isSelected = currentSelectedMuscles.includes(tpl.name)
-                return (
-                  <button
-                    key={tpl.id}
-                    className={`muscle-chip ${isSelected ? 'active' : ''}`}
-                    onClick={() => handleToggleDayMuscle(tpl.name)}
-                  >
-                    {tpl.name}
-                  </button>
-                )
-              })}
-            </div>
-          </section>
+          {/* Main Muscle Group Picker Section with '반영' button */}
+          {showDayPicker ? (
+            <section className="day-main-picker-card">
+              <div className="day-picker-search-row">
+                <div className="template-search-bar">
+                  <span className="search-icon">🔍</span>
+                  <input
+                    type="text"
+                    placeholder="Main 운동 추가 하세요."
+                    value={daySearchFilter}
+                    onChange={(e) => setDaySearchFilter(e.target.value)}
+                  />
+                </div>
+                <button className="day-picker-reflect-btn" onClick={handleApplyDayPicker}>
+                  반영
+                </button>
+              </div>
+              <div className="muscle-chips-row">
+                {dayFilteredTemplates.map((tpl) => {
+                  const isSelected = currentSelectedMuscles.includes(tpl.name)
+                  return (
+                    <button
+                      key={tpl.id}
+                      className={`muscle-chip ${isSelected ? 'active' : ''}`}
+                      onClick={() => handleToggleDayMuscle(tpl.name)}
+                    >
+                      {tpl.name}
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
+          ) : null}
 
           <section className="workout-layout">
             <div className="workout-main">
@@ -816,6 +843,11 @@ function App() {
                   <h2>{currentFocus}</h2>
                 </div>
                 <div className="heading-right-group">
+                  {!showDayPicker ? (
+                    <button className="open-picker-btn" onClick={() => setShowDayPicker(true)}>
+                      🔍 Main 운동 변경
+                    </button>
+                  ) : null}
                   <button className="load-template-btn" onClick={handleOpenApplyModal}>
                     📋 상세 템플릿 목록
                   </button>

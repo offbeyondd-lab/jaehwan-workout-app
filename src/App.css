@@ -18,7 +18,7 @@ button { font: inherit; cursor: pointer; }
 .week-selector button.active, .week-selector button:hover { background: var(--ink); color: white; border-color: var(--ink); }
 .week-selector button.total-active { background: var(--coral); color: white; border-color: var(--coral); }
 .week-selector button.template-active { background: #464feb; color: white; border-color: #464feb; }
-.day-tabs { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.day-tabs { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .day-tabs button { border: 0; border-right: 1px solid var(--line); background: transparent; text-align: left; padding: 18px 20px; color: var(--muted); }
 .day-tabs button:last-child { border: 0; }
 .day-tabs button.active { color: var(--ink); box-shadow: inset 0 -3px var(--coral); }
@@ -40,6 +40,12 @@ button { font: inherit; cursor: pointer; }
 
 /* Day Main Muscle Picker Bar (Matching Attachment Image) */
 .day-main-picker-card { margin-top: 24px; margin-bottom: -24px; }
+.day-picker-search-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.day-picker-search-row .template-search-bar { flex: 1; margin-bottom: 0; }
+.day-picker-reflect-btn { border: 0; background: #464feb; color: white; padding: 11px 22px; font-size: 14px; font-weight: 800; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: background .15s ease; }
+.day-picker-reflect-btn:hover { background: #353bc7; }
+.open-picker-btn { border: 1px solid var(--line); background: white; color: var(--ink); font-size: 12px; font-weight: 800; padding: 7px 12px; border-radius: 4px; cursor: pointer; }
+.open-picker-btn:hover { border-color: #464feb; color: #464feb; }
 .day-main-picker-card .muscle-chips-row { margin-bottom: 0; }
 
 /* Template Management Section */
@@ -166,4 +172,4 @@ button { font: inherit; cursor: pointer; }
 .history-list { padding: 16px; background: #292a27; }.history-card { margin-bottom: 14px; padding: 18px 16px 12px; background: #191a18; }.history-card:last-child { margin-bottom: 0; }.history-card-top { display: flex; justify-content: space-between; margin-bottom: 20px; }.history-card-top strong { font-size: 16px; }.history-card-top span, .history-labels, .history-set { color: #aaa9a2; font-size: 12px; }.history-labels, .history-set { display: grid; grid-template-columns: 70px 1fr 1fr; gap: 12px; padding: 9px 5px; border-bottom: 1px solid #292a27; }.history-set { color: #eee; }.history-set strong { font-weight: 500; }.history-empty { padding: 48px 30px; color: #aaa9a2; line-height: 1.7; }
 footer { display: flex; justify-content: space-between; border-top: 1px solid var(--line); padding: 20px 0 30px; color: var(--muted); font-size: 11px; letter-spacing: .06em; }
 @media (max-width: 1050px) { .workout-layout { display: block; } .summary-panel { margin-top: 40px; } }
-@media (max-width: 800px) { .app-shell { padding: 0 20px; } .topbar-actions { gap: 10px; } .topbar-meta { display: none; } .save-image-button { padding: 8px 10px; } .intro { display: block; padding: 48px 0 38px; } .week-selector { margin-top: 30px; } .day-tabs { overflow-x: auto; grid-template-columns: repeat(5, minmax(120px, 1fr)); } .workout-layout { display: block; padding-top: 42px; } .summary-panel { margin-top: 40px; } .exercise-row { grid-template-columns: 35px minmax(120px, 1fr) 55px; gap: 8px; padding: 14px 0; } .reps-input, .memo-field { grid-column: 2 / -1; } .weight, .volume-cell { display: none; } .rep-grid input { padding: 8px 2px; } .history-button { align-self: stretch; } footer { display: block; } footer span { display: block; margin-top: 8px; } }
+@media (max-width: 800px) { .app-shell { padding: 0 20px; } .topbar-actions { gap: 10px; } .topbar-meta { display: none; } .save-image-button { padding: 8px 10px; } .intro { display: block; padding: 48px 0 38px; } .week-selector { margin-top: 30px; } .day-tabs { overflow-x: auto; grid-template-columns: repeat(7, minmax(100px, 1fr)); } .workout-layout { display: block; padding-top: 42px; } .summary-panel { margin-top: 40px; } .exercise-row { grid-template-columns: 35px minmax(120px, 1fr) 55px; gap: 8px; padding: 14px 0; } .reps-input, .memo-field { grid-column: 2 / -1; } .weight, .volume-cell { display: none; } .rep-grid input { padding: 8px 2px; } .history-button { align-self: stretch; } footer { display: block; } footer span { display: block; margin-top: 8px; } }
