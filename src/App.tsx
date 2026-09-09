@@ -1007,14 +1007,14 @@ function App() {
                     </div>
                     <div className="history-labels">
                       <span>Sets</span>
-                      <span>Completed</span>
-                      <span>Target</span>
+                      <span>WEIGHT</span>
+                      <span>REP</span>
                     </div>
                     {entry.reps.map((rep, index) => (
                       <div className="history-set" key={index}>
                         <span>{index + 1}</span>
-                        <strong>{entry.weight ? `${entry.weight} ${entry.unit || 'kg'} × ${rep || '-'}` : rep || '-'}</strong>
-                        <span>{entry.weight ? `${entry.weight} ${entry.unit || 'kg'}` : '-'}</span>
+                        <strong>{entry.weight ? `${entry.weight} ${entry.unit || 'kg'}` : '-'}</strong>
+                        <span>{rep ? `${rep}회` : '-'}</span>
                       </div>
                     ))}
                   </article>
