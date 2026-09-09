@@ -233,7 +233,7 @@ function App() {
 
   const totalSummary = weeks.map((week) => muscleGroups.map((muscle) => workoutDays.reduce((sum, workoutDay, dayIndex) => sum + workoutDay.exercises.reduce((daySum, exercise, exerciseIndex) => daySum + (exercise.muscle === muscle ? volumeFor(exercise, week, dayIndex, exerciseIndex) : 0), 0), 0)))
   const summaryTotals = muscleGroups.map((_, index) => totalSummary.reduce((sum, week) => sum + week[index], 0))
-  const selectedHistory = history.filter((entry) => entry.name === historyExercise)
+  const selectedHistory = history.filter((entry) => entry.name === historyExercise).slice(0, 3)
   const configuredIndices = day.exercises
     .map((exercise, index) => ({ exercise, index }))
     .filter(({ exercise, index }) => displayName(exercise, index).trim() !== '')
@@ -444,43 +444,6 @@ function App() {
     // Download / Save link
     const link = document.createElement('a')
     link.download = `INSTA-${selectedWeek}-${day.title}-${now.toISOString().slice(0, 10)}.png`
-    link.href = canvas.toDataURL('image/png')
-    link.click()
-  }
-
-  const saveWorkoutImage = () => {
-    const canvas = document.createElement('canvas')
-    const context = canvas.getContext('2d')
-    if (!context) return
-    canvas.width = 1200
-    canvas.height = 180 + day.exercises.length * 70
-    context.fillStyle = '#f5f5f0'
-    context.fillRect(0, 0, canvas.width, canvas.height)
-    context.fillStyle = '#20211e'
-    context.font = '700 32px Trebuchet MS, Malgun Gothic, sans-serif'
-    context.fillText(`${selectedWeek} / ${day.title}`, 40, 55)
-    context.fillStyle = '#e85f48'
-    context.fillText(currentFocus, 40, 100)
-    context.fillStyle = '#777870'
-    context.font = '700 13px Trebuchet MS, Malgun Gothic, sans-serif'
-    context.fillText('EXERCISE', 40, 145); context.fillText('WEIGHT', 470, 145); context.fillText('REPS', 600, 145); context.fillText('VOLUME', 900, 145)
-    day.exercises.forEach((exercise, index) => {
-      const y = 180 + index * 70
-      const settings = settingsFor(exercise, selectedWeek, selectedDay, index)
-      const record = recordsFor(selectedWeek, selectedDay, index)
-      const name = displayName(exercise, index)
-      context.strokeStyle = '#dedfd9'
-      context.beginPath(); context.moveTo(40, y - 25); context.lineTo(1160, y - 25); context.stroke()
-      context.fillStyle = '#20211e'; context.font = '16px Trebuchet MS, Malgun Gothic, sans-serif'
-      context.fillText(name || '-', 40, y + 5)
-      context.fillStyle = '#777870'
-      context.fillText(settings.weight ? `${settings.weight} ${settings.unit}` : '-', 470, y + 5)
-      context.fillText(record.join(' / '), 600, y + 5)
-      context.fillStyle = '#e85f48'
-      context.fillText(`${volumeFor(exercise, selectedWeek, selectedDay, index).toLocaleString()} ${settings.unit}`, 900, y + 5)
-    })
-    const link = document.createElement('a')
-    link.download = `LJH-${selectedWeek}-${day.title}.png`
     link.href = canvas.toDataURL('image/png')
     link.click()
   }
@@ -751,7 +714,6 @@ function App() {
         <div className="brand-mark">LJH <span>TRAINING LOG</span></div>
         <div className="topbar-actions">
           <div className="topbar-meta"><span className="status-dot" /> 점심 운동 기록</div>
-          <button className="save-image-button" onClick={saveWorkoutImage}>기록 저장 ↓</button>
         </div>
       </header>
 
@@ -1151,7 +1113,7 @@ function App() {
                 {isAllCompleted ? '운동 완료 해제' : '운동 완료 처리'} <span>→</span>
               </button>
               <button className="save-insta-btn" onClick={saveInstagramImage}>
-                📸 이미지 저장하기 (인스타용) <span>↓</span>
+                📸 이미지 저장하기 <span>↓</span>
               </button>
             </aside>
           </section>
