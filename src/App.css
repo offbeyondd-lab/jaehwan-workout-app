@@ -44,9 +44,9 @@ button { font: inherit; cursor: pointer; }
 .day-picker-search-row .template-search-bar { flex: 1; margin-bottom: 0; }
 .day-picker-reflect-btn { border: 0; background: #464feb; color: white; padding: 11px 22px; font-size: 14px; font-weight: 800; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: background .15s ease; }
 .day-picker-reflect-btn:hover { background: #353bc7; }
-.open-picker-btn { border: 1px solid var(--line); background: white; color: var(--ink); font-size: 12px; font-weight: 800; padding: 7px 12px; border-radius: 4px; cursor: pointer; }
-.open-picker-btn:hover { border-color: #464feb; color: #464feb; }
-.day-main-picker-card .muscle-chips-row { margin-bottom: 0; }
+.apply-all-weeks-btn { border: 1px solid #464feb; background: #eef0ff; color: #464feb; padding: 8px 18px; font-size: 13px; font-weight: 800; border-radius: 20px; cursor: pointer; transition: all .15s ease; margin-left: auto; }
+.apply-all-weeks-btn:hover { background: #464feb; color: white; }
+.day-main-picker-card .muscle-chips-row { margin-bottom: 0; align-items: center; }
 
 /* Template Management Section */
 .template-setting-container { padding: 48px 0 80px; }

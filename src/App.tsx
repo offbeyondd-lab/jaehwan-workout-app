@@ -233,8 +233,14 @@ function App() {
   const totalSummary = weeks.map((week) => muscleGroups.map((muscle) => workoutDays.reduce((sum, workoutDay, dayIndex) => sum + workoutDay.exercises.reduce((daySum, exercise, exerciseIndex) => daySum + (exercise.muscle === muscle ? volumeFor(exercise, week, dayIndex, exerciseIndex) : 0), 0), 0)))
   const summaryTotals = muscleGroups.map((_, index) => totalSummary.reduce((sum, week) => sum + week[index], 0))
   const selectedHistory = history.filter((entry) => entry.name === historyExercise)
-  const completedCount = day.exercises.filter((_, index) => completed[currentKey(index)]).length
-  const isAllCompleted = day.exercises.length > 0 && day.exercises.every((_, index) => !!completed[currentKey(index)])
+  const configuredIndices = day.exercises
+    .map((exercise, index) => ({ exercise, index }))
+    .filter(({ exercise, index }) => displayName(exercise, index).trim() !== '')
+    .map(({ index }) => index)
+
+  const configuredCount = configuredIndices.length
+  const completedCount = configuredIndices.filter((index) => !!completed[currentKey(index)]).length
+  const isAllCompleted = configuredCount > 0 && configuredIndices.every((index) => !!completed[currentKey(index)])
 
   // Save Effects
   useEffect(() => localStorage.setItem('workout-reps', JSON.stringify(reps)), [reps])
@@ -302,15 +308,16 @@ function App() {
     if (isAllCompleted) {
       setCompleted((current) => {
         const next = { ...current }
-        day.exercises.forEach((_, index) => {
+        configuredIndices.forEach((index) => {
           next[currentKey(index)] = false
         })
         return next
       })
     } else {
       const date = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' })
-      const entries = day.exercises
-        .map((exercise, index) => {
+      const entries = configuredIndices
+        .map((index) => {
+          const exercise = day.exercises[index]
           const settings = settingsFor(exercise, selectedWeek, selectedDay, index)
           const name = displayName(exercise, index)
           return {
@@ -330,7 +337,7 @@ function App() {
       setHistory((current) => [...entries, ...current])
       setCompleted((current) => {
         const next = { ...current }
-        day.exercises.forEach((_, index) => {
+        configuredIndices.forEach((index) => {
           next[currentKey(index)] = true
         })
         return next
@@ -388,6 +395,50 @@ function App() {
           newOverrides[key] = { sets: '', weight: '', unit: 'kg' }
         }
       }
+
+      setNames(newNames)
+      setOverrides(newOverrides)
+    }
+
+    setShowDayPicker(false)
+  }
+
+  // --- Apply Selected Muscles across ALL WEEKS for current Day ---
+  const handleApplyDayPickerToAllWeeks = () => {
+    const currentList = dayMuscles[selectedDay] || []
+    const combinedExercises: { name: string; sets: number }[] = []
+    currentList.forEach((mName) => {
+      const tpl = templates.find((t) => t.name === mName)
+      if (tpl) {
+        tpl.exercises.forEach((ex) => {
+          if (ex.name.trim() !== '') {
+            combinedExercises.push({ name: ex.name, sets: ex.sets })
+          }
+        })
+      }
+    })
+
+    if (currentList.length > 0) {
+      const newNames: Record<string, string> = { ...names }
+      const newOverrides: ExerciseOverrides = { ...overrides }
+
+      weeks.forEach((week) => {
+        for (let i = 0; i < 10; i++) {
+          const key = keyFor(week, selectedDay, i)
+          if (i < combinedExercises.length) {
+            const item = combinedExercises[i]
+            newNames[key] = item.name
+            newOverrides[key] = {
+              sets: item.sets.toString(),
+              weight: overrides[key]?.weight ?? '',
+              unit: overrides[key]?.unit ?? 'kg'
+            }
+          } else {
+            newNames[key] = ''
+            newOverrides[key] = { sets: '', weight: '', unit: 'kg' }
+          }
+        }
+      })
 
       setNames(newNames)
       setOverrides(newOverrides)
@@ -825,7 +876,7 @@ function App() {
             ))}
           </nav>
 
-          {/* Main Muscle Group Picker Section with '반영' button */}
+          {/* Main Muscle Group Picker Section with '반영' & '모든 WEEK에 적용' buttons */}
           {showDayPicker ? (
             <section className="day-main-picker-card">
               <div className="day-picker-search-row">
@@ -855,6 +906,9 @@ function App() {
                     </button>
                   )
                 })}
+                <button className="apply-all-weeks-btn" onClick={handleApplyDayPickerToAllWeeks}>
+                  모든 WEEK에 적용
+                </button>
               </div>
             </section>
           ) : null}
@@ -867,15 +921,10 @@ function App() {
                   <h2>{currentFocus}</h2>
                 </div>
                 <div className="heading-right-group">
-                  {!showDayPicker ? (
-                    <button className="open-picker-btn" onClick={() => setShowDayPicker(true)}>
-                      🔍 Main 운동 변경
-                    </button>
-                  ) : null}
                   <button className="load-template-btn" onClick={handleOpenApplyModal}>
                     📋 상세 템플릿 목록
                   </button>
-                  <span className="progress-label">{completedCount} / {day.exercises.length} 완료</span>
+                  <span className="progress-label">{completedCount} / {configuredCount} 완료</span>
                 </div>
               </div>
 
