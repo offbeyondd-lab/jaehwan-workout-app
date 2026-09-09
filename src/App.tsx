@@ -197,6 +197,7 @@ function App() {
   // Modal / Search States
   const [showApplyModal, setShowApplyModal] = useState(false)
   const [selectedApplyTemplateIds, setSelectedApplyTemplateIds] = useState<string[]>([])
+  const [excludedApplyExerciseKeys, setExcludedApplyExerciseKeys] = useState<Record<string, boolean>>({})
   const [showAddMuscleModal, setShowAddMuscleModal] = useState(false)
   const [newMuscleNameInput, setNewMuscleNameInput] = useState('')
   const [deleteConfirmTemplate, setDeleteConfirmTemplate] = useState<MuscleTemplate | null>(null)
@@ -481,9 +482,27 @@ function App() {
     }))
   }
 
+  // Candidate exercises for template apply modal
+  const candidateApplyExercises = selectedApplyTemplateIds.flatMap((tplId) => {
+    const tpl = templates.find((t) => t.id === tplId)
+    if (!tpl) return []
+    return tpl.exercises
+      .filter((e) => e.name.trim() !== '')
+      .map((ex, idx) => ({
+        key: `${tpl.id}-${ex.id || idx}-${ex.name}`,
+        tplId: tpl.id,
+        tplName: tpl.name,
+        name: ex.name,
+        sets: ex.sets
+      }))
+  })
+
+  const includedApplyExercises = candidateApplyExercises.filter((ex) => !excludedApplyExerciseKeys[ex.key])
+
   // --- Day View Template Application Modal ---
   const handleOpenApplyModal = () => {
     setSelectedApplyTemplateIds([])
+    setExcludedApplyExerciseKeys({})
     setShowApplyModal(true)
   }
 
@@ -494,33 +513,21 @@ function App() {
   }
 
   const handleApplyTemplatesToDay = () => {
-    if (selectedApplyTemplateIds.length === 0) {
-      alert('불러올 템플릿 부위를 하나 이상 선택해주세요.')
+    if (includedApplyExercises.length === 0) {
+      alert('적용할 운동을 하나 이상 선택해주세요.')
       return
     }
 
-    const combinedExercises: { name: string; sets: number }[] = []
-    const selectedMuscleNames: string[] = []
-
-    selectedApplyTemplateIds.forEach((tplId) => {
-      const tpl = templates.find((t) => t.id === tplId)
-      if (tpl) {
-        selectedMuscleNames.push(tpl.name)
-        tpl.exercises.forEach((ex) => {
-          if (ex.name.trim() !== '') {
-            combinedExercises.push({ name: ex.name, sets: ex.sets })
-          }
-        })
-      }
-    })
+    const exercisesToApply = includedApplyExercises.slice(0, 10)
+    const selectedMuscleNames = Array.from(new Set(exercisesToApply.map((e) => e.tplName)))
 
     const newNames: Record<string, string> = { ...names }
     const newOverrides: ExerciseOverrides = { ...overrides }
 
     for (let i = 0; i < 10; i++) {
       const key = currentKey(i)
-      if (i < combinedExercises.length) {
-        const item = combinedExercises[i]
+      if (i < exercisesToApply.length) {
+        const item = exercisesToApply[i]
         newNames[key] = item.name
         newOverrides[key] = {
           sets: item.sets.toString(),
@@ -1040,22 +1047,70 @@ function App() {
               </div>
 
               <div className="apply-preview-box">
-                <p className="eyebrow">불러올 운동 순서 미리보기</p>
-                {selectedApplyTemplateIds.length === 0 ? (
+                <div className="preview-box-header">
+                  <p className="eyebrow">
+                    불러올 운동 순서 미리보기 ({includedApplyExercises.length}개 선택됨 / 최대 10개 반영)
+                  </p>
+                  {candidateApplyExercises.length > 0 && (
+                    <button
+                      type="button"
+                      className="preview-reset-btn"
+                      onClick={() => setExcludedApplyExerciseKeys({})}
+                    >
+                      전체 선택 / 초기화
+                    </button>
+                  )}
+                </div>
+
+                {candidateApplyExercises.length === 0 ? (
                   <p className="preview-empty">선택된 템플릿이 없습니다. 위에서 부위를 선택하세요.</p>
                 ) : (
-                  <ol className="preview-list">
-                    {selectedApplyTemplateIds.flatMap((tplId) => {
-                      const tpl = templates.find((t) => t.id === tplId)
-                      return tpl ? tpl.exercises.filter((e) => e.name.trim()) : []
-                    }).slice(0, 10).map((ex, i) => (
-                      <li key={i}>
-                        <span className="ex-num">{i + 1}.</span>
-                        <strong className="ex-name">{ex.name}</strong>
-                        <span className="ex-sets">({ex.sets}세트)</span>
-                      </li>
-                    ))}
-                  </ol>
+                  <div className="preview-items-grid">
+                    {candidateApplyExercises.map((ex) => {
+                      const isExcluded = !!excludedApplyExerciseKeys[ex.key]
+                      const activeIndex = includedApplyExercises.findIndex((item) => item.key === ex.key)
+
+                      return (
+                        <div
+                          key={ex.key}
+                          className={`preview-item-card ${isExcluded ? 'excluded' : 'included'}`}
+                        >
+                          <label className="preview-item-label">
+                            <input
+                              type="checkbox"
+                              checked={!isExcluded}
+                              onChange={() => {
+                                setExcludedApplyExerciseKeys((prev) => ({
+                                  ...prev,
+                                  [ex.key]: !prev[ex.key]
+                                }))
+                              }}
+                            />
+                            <span className="preview-ex-num">
+                              {!isExcluded ? `${activeIndex + 1}.` : '•'}
+                            </span>
+                            <span className="preview-tpl-tag">[{ex.tplName}]</span>
+                            <strong className="preview-ex-name">{ex.name}</strong>
+                            <span className="preview-ex-sets">({ex.sets}세트)</span>
+                          </label>
+
+                          <button
+                            type="button"
+                            className="preview-item-delete-btn"
+                            title="운동 제외/삭제"
+                            onClick={() => {
+                              setExcludedApplyExerciseKeys((prev) => ({
+                                ...prev,
+                                [ex.key]: !prev[ex.key]
+                              }))
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
                 )}
               </div>
 
