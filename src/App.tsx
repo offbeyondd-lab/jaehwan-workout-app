@@ -119,6 +119,17 @@ const defaultTemplates: MuscleTemplate[] = [
     ]
   },
   {
+    id: 'tpl-abs',
+    name: '복근',
+    createdAt: '2026.09.09',
+    updatedAt: '2026.09.09',
+    exercises: [
+      { id: 'ab1', name: '크런치', sets: 3 },
+      { id: 'ab2', name: '레그레이즈', sets: 3 },
+      { id: 'ab3', name: '플랭크', sets: 3 },
+    ]
+  },
+  {
     id: 'tpl-cardio',
     name: '유산소',
     createdAt: '2026.09.09',
@@ -130,6 +141,22 @@ const defaultTemplates: MuscleTemplate[] = [
     ]
   }
 ]
+
+const initialDayMuscles: Record<number, string[]> = {
+  0: ['하체'],
+  1: ['가슴', '삼두'],
+  2: ['어깨', '복근'],
+  3: ['이두', '삼두', '복근'],
+  4: ['등', '어깨']
+}
+
+const initialDayFocuses: Record<number, string> = {
+  0: '하체',
+  1: '가슴 + 삼두 (밀기 운동)',
+  2: '어깨 + 복근',
+  3: '팔 + 복근',
+  4: '등 + 어깨 후면'
+}
 
 const weeks = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8']
 const muscleGroups = ['하체', '가슴', '등', '어깨', '이두', '삼두']
@@ -151,7 +178,12 @@ function App() {
   const [history, setHistory] = useState<HistoryEntry[]>(() => readStorage('workout-history', []))
   const [historyExercise, setHistoryExercise] = useState<string | null>(null)
 
-  // Template State
+  // Day Focus & Selected Muscle Groups State
+  const [dayMuscles, setDayMuscles] = useState<Record<number, string[]>>(() => readStorage('workout-day-muscles', initialDayMuscles))
+  const [dayFocuses, setDayFocuses] = useState<Record<number, string>>(() => readStorage('workout-day-focuses', initialDayFocuses))
+  const [daySearchFilter, setDaySearchFilter] = useState('')
+
+  // Template Management State
   const [templates, setTemplates] = useState<MuscleTemplate[]>(() => readStorage('workout-main-templates', defaultTemplates))
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(() => templates[0]?.id || '')
 
@@ -164,6 +196,9 @@ function App() {
   const [templateSearchFilter, setTemplateSearchFilter] = useState('')
 
   const day = workoutDays[selectedDay]
+  const currentFocus = dayFocuses[selectedDay] || day.focus
+  const currentSelectedMuscles = dayMuscles[selectedDay] || []
+
   const keyFor = (week: string, dayIndex: number, exerciseIndex: number) => `${week}-${dayIndex}-${exerciseIndex}`
   const currentKey = (exerciseIndex: number) => keyFor(selectedWeek, selectedDay, exerciseIndex)
 
@@ -200,6 +235,8 @@ function App() {
   useEffect(() => localStorage.setItem('workout-completed', JSON.stringify(completed)), [completed])
   useEffect(() => localStorage.setItem('workout-history', JSON.stringify(history)), [history])
   useEffect(() => localStorage.setItem('workout-main-templates', JSON.stringify(templates)), [templates])
+  useEffect(() => localStorage.setItem('workout-day-muscles', JSON.stringify(dayMuscles)), [dayMuscles])
+  useEffect(() => localStorage.setItem('workout-day-focuses', JSON.stringify(dayFocuses)), [dayFocuses])
 
   const updateRep = (index: number, setIndex: number, value: string) => setReps((current) => { const next = [...(current[currentKey(index)] ?? emptyReps())]; next[setIndex] = value; return { ...current, [currentKey(index)]: next } })
   const updateSetting = (exercise: Exercise, index: number, field: 'sets' | 'weight' | 'unit', value: string) => setOverrides((current) => {
@@ -227,7 +264,7 @@ function App() {
     context.font = '700 32px Trebuchet MS, Malgun Gothic, sans-serif'
     context.fillText(`${selectedWeek} / ${day.title}`, 40, 55)
     context.fillStyle = '#e85f48'
-    context.fillText(day.focus, 40, 100)
+    context.fillText(currentFocus, 40, 100)
     context.fillStyle = '#777870'
     context.font = '700 13px Trebuchet MS, Malgun Gothic, sans-serif'
     context.fillText('EXERCISE', 40, 145); context.fillText('WEIGHT', 470, 145); context.fillText('REPS', 600, 145); context.fillText('VOLUME', 900, 145)
@@ -274,6 +311,57 @@ function App() {
 
     setHistory((current) => [...entries, ...current])
     day.exercises.forEach((_, index) => { if (!completed[currentKey(index)]) toggleComplete(index) })
+  }
+
+  // --- Day Main Muscle Chip Toggle Handler ---
+  const handleToggleDayMuscle = (muscleName: string) => {
+    const currentList = dayMuscles[selectedDay] || []
+    let nextList: string[] = []
+    if (currentList.includes(muscleName)) {
+      nextList = currentList.filter((m) => m !== muscleName)
+    } else {
+      nextList = [...currentList, muscleName]
+    }
+
+    const nextFocus = nextList.length > 0 ? nextList.join(' + ') : '자율 운동'
+
+    setDayMuscles((prev) => ({ ...prev, [selectedDay]: nextList }))
+    setDayFocuses((prev) => ({ ...prev, [selectedDay]: nextFocus }))
+
+    // Combine templates into Day's 10 slots
+    const combinedExercises: { name: string; sets: number }[] = []
+    nextList.forEach((mName) => {
+      const tpl = templates.find((t) => t.name === mName)
+      if (tpl) {
+        tpl.exercises.forEach((ex) => {
+          if (ex.name.trim() !== '') {
+            combinedExercises.push({ name: ex.name, sets: ex.sets })
+          }
+        })
+      }
+    })
+
+    const newNames: Record<string, string> = { ...names }
+    const newOverrides: ExerciseOverrides = { ...overrides }
+
+    for (let i = 0; i < 10; i++) {
+      const key = currentKey(i)
+      if (i < combinedExercises.length) {
+        const item = combinedExercises[i]
+        newNames[key] = item.name
+        newOverrides[key] = {
+          sets: item.sets.toString(),
+          weight: overrides[key]?.weight ?? '',
+          unit: overrides[key]?.unit ?? 'kg'
+        }
+      } else {
+        newNames[key] = ''
+        newOverrides[key] = { sets: '', weight: '', unit: 'kg' }
+      }
+    }
+
+    setNames(newNames)
+    setOverrides(newOverrides)
   }
 
   // --- Template Management Functions ---
@@ -373,7 +461,7 @@ function App() {
     }))
   }
 
-  // --- Day View Template Application ---
+  // --- Day View Template Application Modal ---
   const handleOpenApplyModal = () => {
     setSelectedApplyTemplateIds([])
     setShowApplyModal(true)
@@ -391,11 +479,13 @@ function App() {
       return
     }
 
-    // Gather exercises in checked order
     const combinedExercises: { name: string; sets: number }[] = []
+    const selectedMuscleNames: string[] = []
+
     selectedApplyTemplateIds.forEach((tplId) => {
       const tpl = templates.find((t) => t.id === tplId)
       if (tpl) {
+        selectedMuscleNames.push(tpl.name)
         tpl.exercises.forEach((ex) => {
           if (ex.name.trim() !== '') {
             combinedExercises.push({ name: ex.name, sets: ex.sets })
@@ -404,7 +494,6 @@ function App() {
       }
     })
 
-    // Copy into current Day's 10 slots
     const newNames: Record<string, string> = { ...names }
     const newOverrides: ExerciseOverrides = { ...overrides }
 
@@ -424,6 +513,11 @@ function App() {
       }
     }
 
+    if (selectedMuscleNames.length > 0) {
+      setDayMuscles((prev) => ({ ...prev, [selectedDay]: selectedMuscleNames }))
+      setDayFocuses((prev) => ({ ...prev, [selectedDay]: selectedMuscleNames.join(' + ') }))
+    }
+
     setNames(newNames)
     setOverrides(newOverrides)
     setShowApplyModal(false)
@@ -432,6 +526,10 @@ function App() {
   // Filter templates for search/chip bar in Template Setting
   const filteredTemplates = templates.filter((tpl) =>
     templateSearchFilter.trim() === '' || tpl.name.includes(templateSearchFilter) || tpl.exercises.some((e) => e.name.includes(templateSearchFilter))
+  )
+
+  const dayFilteredTemplates = templates.filter((tpl) =>
+    daySearchFilter.trim() === '' || tpl.name.includes(daySearchFilter) || tpl.exercises.some((e) => e.name.includes(daySearchFilter))
   )
 
   return (
@@ -488,7 +586,6 @@ function App() {
             </button>
           </div>
 
-          {/* Search & Muscle Group Chips Bar (Matching Attachment Style) */}
           <div className="template-search-bar">
             <span className="search-icon">🔍</span>
             <input
@@ -511,7 +608,6 @@ function App() {
             ))}
           </div>
 
-          {/* Active Muscle Group Editor */}
           {activeTemplate ? (
             <div className="template-editor-card">
               <div className="template-card-header">
@@ -539,7 +635,6 @@ function App() {
                 </div>
               </div>
 
-              {/* Template Exercises Table */}
               <div className="template-table-wrap">
                 <table className="template-table">
                   <thead>
@@ -681,21 +776,48 @@ function App() {
                 onClick={() => setSelectedDay(index)}
               >
                 <span>{workout.title}</span>
-                <strong>{workout.focus}</strong>
+                <strong>{dayFocuses[index] || workout.focus}</strong>
               </button>
             ))}
           </nav>
+
+          {/* Main Muscle Group Picker Section (Matching Attachment Image) */}
+          <section className="day-main-picker-card">
+            <div className="template-search-bar">
+              <span className="search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="Main 운동 추가 하세요."
+                value={daySearchFilter}
+                onChange={(e) => setDaySearchFilter(e.target.value)}
+              />
+            </div>
+            <div className="muscle-chips-row">
+              {dayFilteredTemplates.map((tpl) => {
+                const isSelected = currentSelectedMuscles.includes(tpl.name)
+                return (
+                  <button
+                    key={tpl.id}
+                    className={`muscle-chip ${isSelected ? 'active' : ''}`}
+                    onClick={() => handleToggleDayMuscle(tpl.name)}
+                  >
+                    {tpl.name}
+                  </button>
+                )
+              })}
+            </div>
+          </section>
 
           <section className="workout-layout">
             <div className="workout-main">
               <div className="section-heading">
                 <div>
                   <p className="eyebrow">{selectedWeek} / {day.title}</p>
-                  <h2>{day.focus}</h2>
+                  <h2>{currentFocus}</h2>
                 </div>
                 <div className="heading-right-group">
                   <button className="load-template-btn" onClick={handleOpenApplyModal}>
-                    📋 템플릿 불러오기
+                    📋 상세 템플릿 목록
                   </button>
                   <span className="progress-label">{completedCount} / {day.exercises.length} 완료</span>
                 </div>
@@ -885,7 +1007,6 @@ function App() {
                 ))}
               </div>
 
-              {/* Preview Box */}
               <div className="apply-preview-box">
                 <p className="eyebrow">불러올 운동 순서 미리보기</p>
                 {selectedApplyTemplateIds.length === 0 ? (
