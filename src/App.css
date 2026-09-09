@@ -158,6 +158,10 @@ button { font: inherit; cursor: pointer; }
 .exercise-name-input { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 2px; padding: 9px 8px; background: white; color: var(--ink); font: 700 14px inherit; outline: none; }
 .exercise-name-input:focus { border-color: var(--coral); box-shadow: 0 0 0 2px rgba(232, 95, 72, .12); }
 .target small, .reps-input small, .volume-cell small { display: block; margin-bottom: 5px; }
+.reps-header-line { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+.reps-header-line small { margin-bottom: 0; }
+.copy-rep-btn { border: 1px solid var(--line); background: white; color: var(--ink); font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 3px; cursor: pointer; transition: all .15s ease; white-space: nowrap; }
+.copy-rep-btn:hover { border-color: #464feb; color: #464feb; background: #f0f2ff; }
 .target strong { color: var(--ink); font-size: 15px; }
 .rep-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
 .rep-grid input { width: 100%; min-width: 0; padding: 8px 4px; text-align: center; font-size: 11px; border: 1px solid var(--line); color: var(--ink); font-weight: 700; outline: none; }

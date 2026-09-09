@@ -313,6 +313,21 @@ function App() {
   useEffect(() => localStorage.setItem('workout-day-focuses', JSON.stringify(dayFocuses)), [dayFocuses])
 
   const updateRep = (index: number, setIndex: number, value: string) => setReps((current) => { const next = [...(current[currentKey(index)] ?? emptyReps())]; next[setIndex] = value; return { ...current, [currentKey(index)]: next } })
+
+  const copyFirstRepToAllSets = (index: number) => {
+    setReps((current) => {
+      const currentArr = current[currentKey(index)] ?? emptyReps()
+      const firstVal = currentArr[0]?.trim() || ''
+      if (!firstVal) {
+        alert('S1(1세트)에 반복 수를 먼저 입력해주세요.')
+        return current
+      }
+      return {
+        ...current,
+        [currentKey(index)]: [firstVal, firstVal, firstVal, firstVal, firstVal]
+      }
+    })
+  }
   const updateSetting = (exercise: Exercise, index: number, field: 'sets' | 'weight' | 'unit', value: string) => setOverrides((current) => {
     const currentSettings = settingsFor(exercise, selectedWeek, selectedDay, index)
     return {
@@ -1134,7 +1149,17 @@ function App() {
                       </label>
 
                       <div className="reps-input">
-                        <small>Reps Record</small>
+                        <div className="reps-header-line">
+                          <small>Reps Record</small>
+                          <button
+                            type="button"
+                            className="copy-rep-btn"
+                            title="S1에 입력한 Reps를 S2~S5 전체 세트에 동일하게 복사"
+                            onClick={() => copyFirstRepToAllSets(index)}
+                          >
+                            동일 Rep 적용
+                          </button>
+                        </div>
                         <div className="rep-grid">
                           {record.map((value, setIndex) => (
                             <input
