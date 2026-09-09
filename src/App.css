@@ -140,7 +140,7 @@ button { font: inherit; cursor: pointer; }
 .exercise-row { min-height: 92px; display: grid; grid-template-columns: 38px minmax(200px, 1.4fr) 50px 72px minmax(210px, 1.3fr) 68px minmax(100px, .8fr); align-items: center; gap: 8px; border-bottom: 1px solid var(--line); }
 .check-button { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line); color: var(--muted); background: white; font-size: 11px; }
 .is-complete .check-button { color: white; border-color: var(--lime); background: var(--lime); }
-.is-complete .exercise-name-input { text-decoration: line-through; color: var(--muted); }
+.is-complete .exercise-name-input { text-decoration: none; color: var(--muted); }
 
 /* Configured vs Unconfigured font weight styles */
 .is-empty-slot .check-button { color: #aaa; font-weight: 400; }
@@ -175,8 +175,7 @@ button { font: inherit; cursor: pointer; }
 .memo-field small { display: block; margin-bottom: 5px; }
 .memo-field input { width: 100%; min-width: 0; border: 1px solid var(--line); padding: 8px 7px; color: var(--ink); outline: none; }
 .memo-field input:focus { border-color: var(--coral); }
-.summary-panel { background: transparent; padding: 0; align-self: start; }
-.summary-panel > :not(.finish-button) { display: none; }
+.summary-panel { display: flex; flex-direction: column; gap: 10px; background: transparent; padding: 0; align-self: start; }
 .summary-panel .eyebrow { color: #9c9b95; }
 .summary-panel h2 { font-size: 43px; line-height: .94; letter-spacing: -.06em; margin: 30px 0 45px; }
 .summary-panel h2 span { color: var(--coral); font-size: 18px; letter-spacing: 0; }
@@ -191,6 +190,9 @@ button { font: inherit; cursor: pointer; }
 .finish-button { margin-top: 0; width: 100%; border: 0; background: var(--coral); color: white; padding: 16px 20px; text-align: left; font-weight: 800; border-radius: 6px; cursor: pointer; transition: background .15s ease; }
 .finish-button:hover { background: #d34c37; }
 .finish-button span { float: right; font-size: 18px; line-height: 14px; }
+.save-insta-btn { width: 100%; border: 1px solid var(--ink); background: white; color: var(--ink); padding: 15px 20px; text-align: left; font-weight: 800; border-radius: 6px; cursor: pointer; transition: all .15s ease; }
+.save-insta-btn:hover { background: var(--ink); color: white; }
+.save-insta-btn span { float: right; font-size: 16px; line-height: 14px; }
 .history-backdrop { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 20px; background: rgba(20, 21, 19, .72); }
 .history-modal { position: relative; width: min(680px, 100%); max-height: min(820px, 92vh); overflow: auto; background: #20211e; color: white; box-shadow: 0 20px 70px rgba(0, 0, 0, .3); }
 .history-close { position: absolute; top: 14px; right: 18px; border: 0; background: transparent; color: white; font-size: 30px; line-height: 1; }

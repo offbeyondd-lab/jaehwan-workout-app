@@ -268,6 +268,186 @@ function App() {
 
   const toggleComplete = (index: number) => setCompleted((current) => ({ ...current, [currentKey(index)]: !current[currentKey(index)] }))
 
+  const saveInstagramImage = () => {
+    const now = new Date()
+    const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토']
+    const daysOfWeekEng = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+    const formattedDate = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 (${daysOfWeek[now.getDay()]})`
+    const engDate = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')} ${daysOfWeekEng[now.getDay()]}`
+
+    const activeExercises = day.exercises.filter((ex, idx) => displayName(ex, idx).trim() !== '')
+    const displayExercises = activeExercises.length > 0 ? activeExercises : day.exercises.filter((_, idx) => idx < 5)
+
+    const canvas = document.createElement('canvas')
+    const context = canvas.getContext('2d')
+    if (!context) return
+
+    const width = 1080
+    const cardPadding = 60
+    const headerHeight = 220
+    const statBarHeight = 90
+    const footerHeight = 80
+    const rowGap = 12
+    const totalRows = displayExercises.length
+
+    const minContentHeight = headerHeight + statBarHeight + (totalRows * 85) + footerHeight + 80
+    const height = Math.max(1350, minContentHeight)
+
+    canvas.width = width
+    canvas.height = height
+
+    // Background - Dark luxury aesthetic
+    context.fillStyle = '#171816'
+    context.fillRect(0, 0, width, height)
+
+    // Top Coral Accent Bar
+    context.fillStyle = '#e85f48'
+    context.fillRect(0, 0, width, 8)
+
+    // Brand Eyebrow
+    context.fillStyle = '#8a8b82'
+    context.font = '800 16px "Trebuchet MS", sans-serif'
+    context.fillText('LJH TRAINING LOG · WORKOUT REPORT', cardPadding, 55)
+
+    // Date & Day of Week
+    context.fillStyle = '#ffffff'
+    context.font = '800 36px "Malgun Gothic", sans-serif'
+    context.fillText(formattedDate, cardPadding, 105)
+
+    // Session Title (Week / Day & Focus)
+    context.fillStyle = '#e85f48'
+    context.font = '800 48px "Malgun Gothic", sans-serif'
+    context.fillText(`${selectedWeek} ${day.title} — ${currentFocus}`, cardPadding, 175)
+
+    // Stat Summary Bar Box
+    const statY = 210
+    const statBoxWidth = width - (cardPadding * 2)
+    context.fillStyle = '#222420'
+    if (typeof context.roundRect === 'function') {
+      context.beginPath()
+      context.roundRect(cardPadding, statY, statBoxWidth, statBarHeight, 10)
+      context.fill()
+    } else {
+      context.fillRect(cardPadding, statY, statBoxWidth, statBarHeight)
+    }
+    context.strokeStyle = '#343630'
+    context.lineWidth = 1
+    context.stroke()
+
+    // Stat Values
+    const totalVol = displayExercises.reduce((sum, ex) => {
+      const idx = day.exercises.indexOf(ex)
+      return sum + volumeFor(ex, selectedWeek, selectedDay, idx)
+    }, 0)
+
+    const totalCompletedSets = displayExercises.reduce((sum, ex) => {
+      const idx = day.exercises.indexOf(ex)
+      const isDone = !!completed[currentKey(idx)]
+      const sets = Number(settingsFor(ex, selectedWeek, selectedDay, idx).sets) || 0
+      return sum + (isDone ? sets : 0)
+    }, 0)
+
+    const colWidth = statBoxWidth / 3
+    const stats = [
+      { label: '완료 운동', value: `${completedCount} / ${configuredCount}` },
+      { label: '총 세션 볼륨', value: `${totalVol.toLocaleString()} kg` },
+      { label: '달성 세트 수', value: `${totalCompletedSets} SETS` }
+    ]
+
+    stats.forEach((stat, i) => {
+      const x = cardPadding + (i * colWidth) + 30
+      context.fillStyle = '#8a8b82'
+      context.font = '700 14px "Malgun Gothic", sans-serif'
+      context.fillText(stat.label, x, statY + 35)
+
+      context.fillStyle = '#ffffff'
+      context.font = '800 22px "Malgun Gothic", sans-serif'
+      context.fillText(stat.value, x, statY + 68)
+    })
+
+    // Exercises Cards
+    let currentY = statY + statBarHeight + 40
+
+    displayExercises.forEach((exercise) => {
+      const idx = day.exercises.indexOf(exercise)
+      const name = displayName(exercise, idx) || '운동 종목'
+      const settings = settingsFor(exercise, selectedWeek, selectedDay, idx)
+      const record = recordsFor(selectedWeek, selectedDay, idx).filter((r) => r.trim() !== '')
+      const vol = volumeFor(exercise, selectedWeek, selectedDay, idx)
+      const isDone = !!completed[currentKey(idx)]
+
+      const rowHeight = 76
+      context.fillStyle = isDone ? '#252922' : '#222320'
+      if (typeof context.roundRect === 'function') {
+        context.beginPath()
+        context.roundRect(cardPadding, currentY, statBoxWidth, rowHeight, 8)
+        context.fill()
+      } else {
+        context.fillRect(cardPadding, currentY, statBoxWidth, rowHeight)
+      }
+      context.strokeStyle = isDone ? '#4a5b35' : '#2f312c'
+      context.lineWidth = 1
+      context.stroke()
+
+      // Indicator circle
+      const checkX = cardPadding + 20
+      const checkY = currentY + (rowHeight / 2)
+      context.fillStyle = isDone ? '#afd844' : '#4a4c45'
+      context.beginPath()
+      context.arc(checkX + 12, checkY, 14, 0, Math.PI * 2)
+      context.fill()
+
+      context.fillStyle = isDone ? '#171816' : '#ffffff'
+      context.font = '800 14px sans-serif'
+      context.textAlign = 'center'
+      context.fillText(isDone ? '✓' : String(idx + 1).padStart(2, '0'), checkX + 12, checkY + 5)
+      context.textAlign = 'left'
+
+      // Name & details
+      context.fillStyle = isDone ? '#ffffff' : '#e0e1dc'
+      context.font = '800 20px "Malgun Gothic", sans-serif'
+      context.fillText(name, cardPadding + 60, currentY + 34)
+
+      context.fillStyle = '#8a8b82'
+      context.font = '600 13px "Malgun Gothic", sans-serif'
+      context.fillText(`${exercise.muscle || '일반'} · ${settings.sets || '-'}세트 @ ${settings.weight || '-'} ${settings.unit}`, cardPadding + 60, currentY + 56)
+
+      // Reps
+      const repsText = record.length > 0 ? record.join(' / ') : '기록 없음'
+      context.fillStyle = '#ffffff'
+      context.font = '700 16px "Trebuchet MS", sans-serif'
+      context.fillText(repsText, cardPadding + 420, currentY + 44)
+
+      // Volume
+      context.fillStyle = '#e85f48'
+      context.font = '800 20px "Trebuchet MS", sans-serif'
+      context.textAlign = 'right'
+      context.fillText(`${vol.toLocaleString()} ${settings.unit}`, cardPadding + statBoxWidth - 20, currentY + 44)
+      context.textAlign = 'left'
+
+      currentY += rowHeight + rowGap
+    })
+
+    // Footer
+    const footerY = height - 40
+    context.fillStyle = '#4a4c45'
+    context.fillRect(cardPadding, footerY - 25, statBoxWidth, 1)
+
+    context.fillStyle = '#8a8b82'
+    context.font = '700 14px "Trebuchet MS", sans-serif'
+    context.fillText('INSTAGRAM @LJH_TRAINING_LOG', cardPadding, footerY)
+
+    context.textAlign = 'right'
+    context.fillText(engDate, cardPadding + statBoxWidth, footerY)
+    context.textAlign = 'left'
+
+    // Download / Save link
+    const link = document.createElement('a')
+    link.download = `INSTA-${selectedWeek}-${day.title}-${now.toISOString().slice(0, 10)}.png`
+    link.href = canvas.toDataURL('image/png')
+    link.click()
+  }
+
   const saveWorkoutImage = () => {
     const canvas = document.createElement('canvas')
     const context = canvas.getContext('2d')
@@ -969,6 +1149,9 @@ function App() {
             <aside className="summary-panel">
               <button className="finish-button" onClick={finishWorkout}>
                 {isAllCompleted ? '운동 완료 해제' : '운동 완료 처리'} <span>→</span>
+              </button>
+              <button className="save-insta-btn" onClick={saveInstagramImage}>
+                📸 이미지 저장하기 (인스타용) <span>↓</span>
               </button>
             </aside>
           </section>
